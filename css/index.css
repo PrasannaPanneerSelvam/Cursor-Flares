@@ -25,4 +25,22 @@
           transform: translate(-50%, -50%);
   font-size: 40px;
 }
+
+footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+}
+
+footer div {
+  margin: 10px 15px;
+  text-align: right;
+  font-size: 18px;
+  color: #eeeeee;
+}
+
+footer a {
+  color: aqua;
+  font-size: 18px;
+}
 /*# sourceMappingURL=index.css.map */

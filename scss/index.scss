@@ -24,3 +24,20 @@
   transform: translate(-50%, -50%);
   font-size: 40px;
 }
+
+footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  div {
+    margin: 10px 15px;
+    text-align: right;
+    font-size: 18px;
+    color: #eeeeee;
+  }
+
+  a {
+    color: aqua;
+    font-size: 18px;
+  }
+}
