@@ -1,130 +1,115 @@
 console.log('Hello world!');
 
+const Mouse = (function () {
+  const mouse = {
+    x: undefined,
+    y: undefined,
+  };
+
+  function setMouse({ x, y }) {
+    mouse.x = x;
+    mouse.y = y;
+  }
+
+  function getMouse() {
+    return { x: mouse.x + 100, y: mouse.y };
+  }
+
+  return { getMouse, setMouse };
+})();
+
 const rootStyle = getComputedStyle(document.body);
 rootStyle.getProp = rootStyle.getPropertyValue;
 
 const canvas = document.getElementById('myCanvas');
 const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
 
-function hexToRGB(str) {
-  const result = [],
-    error = new Error('Incorrect hex color code');
-
-  if (!str || str[0] !== '#' || ![4, 7].includes(str.length)) {
-    throw error;
-  }
-
-  str = str.toUpperCase().slice(1);
-
-  const mapArr = [
-    '0',
-    '1',
-    '2',
-    '3',
-    '4',
-    '5',
-    '6',
-    '7',
-    '8',
-    '9',
-    'A',
-    'B',
-    'C',
-    'D',
-    'E',
-    'F',
-  ];
-
-  const arr = [];
-  [...str].forEach(i => {
-    if (str.length === 3) arr.push(i);
-    arr.push(i);
-  });
-
-  for (let idx = 0; idx < 3; idx++) {
-    const fstValue = mapArr.indexOf(arr[idx]),
-      secValue = mapArr.indexOf(arr[idx * 2 + 1]);
-
-    if (fstValue === -1 || secValue === -1) throw error;
-
-    result.push(fstValue * 16 + secValue);
-  }
-
-  return result;
+function adjustCanvasSize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
 }
 
-class Particle {
-  constructor(context, x = 0, y = 0) {
-    if (!context) {
-      throw new Error('No context provided to create a particle');
-    }
+adjustCanvasSize();
 
-    this.ctx = context;
-    this.initialPoint = { x, y };
+window.addEventListener('resize', adjustCanvasSize);
+
+class Particle {
+  constructor(ctx, x, y) {
+    this.ctx = ctx;
     this.x = x;
     this.y = y;
-    this.size = 10;
-    this.weight = 2;
-    this.direction = [1, 1];
-    this.backgroundColor = '#fff';
 
-    this.totalArea = { height: 0, width: 0 };
+    this.hVel = 0.5;
+    this.vVel = 0.5;
+    this.size = 1;
+
+    this.light = 70;
+
+    this.color = `hsl(${hue},100%,${this.light}%)`;
   }
 
   update() {
-    // Reset y axis
-    if (this.totalArea.height <= this.y) {
-      this.y = this.initialPoint.y;
-      this.weight = 2;
-      return this;
-    }
+    // this.x += this.hVel;
+    // this.y += this.vVel;
 
-    this.weight += 0.01;
-    this.y += this.weight;
+    this.size -= 0.05;
+    this.color = `hsl(${hue},100%,${this.light--}%)`;
+
     return this;
   }
 
   draw() {
-    const { ctx, x, y, size } = this;
-    ctx.fillStyle = 'red';
+    const { x, y, size } = this;
+    ctx.fillStyle = this.color;
     ctx.beginPath();
-    ctx.arc(x, y, size, 0, Math.PI * 2);
-    ctx.closePath();
+    ctx.arc(x, y, size, 0, 360);
     ctx.fill();
-    return this;
-  }
-
-  setTotalAreaDimensions({ height, width }) {
-    this.totalArea = { height, width };
-    return this;
-  }
-
-  clear() {
-    const { ctx, x, y, size } = this;
-
-    ctx.fillStyle = `rgb(${hexToRGB(this.backgroundColor).join(',')}, 0.075)`;
-    ctx.fillRect(x - size, 0, size * 2, this.totalArea.height);
-
-    // ctx.fillStyle = this.backgroundColor;
-    // ctx.fillRect(x - size, y - 200, size * 2, size * 2);
-
-    // ctx.beginPath();
-    // ctx.arc(x, y, size + 1, 0, Math.PI * 2);
-    // ctx.closePath();
-    // ctx.fill();
 
     return this;
   }
 }
 
-const particle = new Particle(ctx, 100, 10);
-particle.setTotalAreaDimensions(canvas);
-particle.backgroundColor = rootStyle.getProp('--canvas-bg').trim();
+let particles = [];
+let hue = 200;
+
+canvas.addEventListener('mousemove', e => {
+  Mouse.setMouse(e);
+  const { x, y } = Mouse.getMouse();
+
+  for (let i = 0; i < 10; i++) {
+    particles.push(new Particle(ctx, x, y));
+  }
+});
+
+function handleParticles() {
+  let nextObj = null;
+  for (let idx = particles.length - 1; idx >= 0; idx--) {
+    if (particles[idx].size <= 0.1) {
+      particles.splice(idx, 1);
+      idx--;
+      continue;
+    }
+
+    particles[idx].update().draw();
+
+    if (nextObj === null) {
+      nextObj = particles[idx];
+      continue;
+    }
+
+    ctx.lineWidth = '2';
+    ctx.strokeStyle = particles[idx].color;
+    ctx.beginPath();
+    ctx.moveTo(particles[idx].x, particles[idx].y);
+    ctx.lineTo(nextObj.x, nextObj.y);
+    ctx.stroke();
+    nextObj = particles[idx];
+  }
+}
 
 function animate() {
-  particle.clear().update().draw();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  handleParticles();
   requestAnimationFrame(animate);
 }
 
